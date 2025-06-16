@@ -26,36 +26,57 @@ def ejecutar_query(nombre_archivo_sql):
 
 
 # Ejecutar la consulta para obtener los datos pivotados
-df = ejecutar_query('ganancia_por_estacion_año.sql')
+# Ejecutar el archivo SQL y cargar los datos
+df = ejecutar_query('productos_vendidos_por_estacion.sql')
+import matplotlib.pyplot as plt
+import seaborn as sns
 
-# Verificar las primeras filas del DataFrame para asegurarse de que la columna 'CambioPorcentual' existe
-print(df.head())
+# Asegurar orden correcto de estaciones
+orden_estaciones = ['Primavera', 'Verano', 'Otoño', 'Invierno']
+df['Estacion'] = pd.Categorical(df['Estacion'], categories=orden_estaciones, ordered=True)
 
+# Configurar figura con subplots (2 filas, 2 columnas)
+fig, axs = plt.subplots(2, 2, figsize=(18, 12), sharex=True)
+fig.suptitle('Tendencias Estacionales por Territorio (Variaciones Porcentuales)', fontsize=20)
 
-sns.set(style="whitegrid")
+# Variables y títulos
+variaciones = [
+    ('VariacionVentas', 'Variación Porcentual de Ventas'),
+    ('VariacionGananciaTotal', 'Variación Porcentual de Ganancia Total'),
+    ('VariacionGananciaBruta', 'Variación Porcentual de Ganancia Bruta'),
+    ('VariacionProductosVendidos', 'Variación Porcentual de Productos Vendidos')
+]
 
-# Crear una figura para el gráfico
-plt.figure(figsize=(14, 8))
+# Paleta de colores por territorio
+territorios = df['Territorio'].unique()
+paleta_colores = sns.color_palette("tab10", n_colors=len(territorios))
 
-# Asignar una paleta de colores para los territorios
-paleta_colores = sns.color_palette("tab10", n_colors=len(df['Territorio'].unique()))
+# Crear gráficos
+for ax, (var, titulo) in zip(axs.flat, variaciones):
+    for i, (territorio, grupo) in enumerate(df.groupby('Territorio')):
+        sns.lineplot(data=grupo, x='Estacion', y=var,
+                     label=territorio if ax == axs[1, 1] else "",  # Solo incluir etiquetas en el último para la leyenda
+                     color=paleta_colores[i], marker='o', ci=None, ax=ax)
 
-# Graficar una línea para cada año y territorio
-for i, (territorio, grupo) in enumerate(df.groupby('Territorio')):
-    sns.lineplot(data=grupo, x='Estacion', y='CambioPorcentual', label=territorio, color=paleta_colores[i], marker='o')
+    # Línea de promedio por estación
+    media_global = df.groupby('Estacion')[var].mean().reset_index()
+    sns.lineplot(data=media_global, x='Estacion', y=var,
+                 color='black', linewidth=2, linestyle='--',
+                 label='Promedio Global' if ax == axs[1, 1] else "", ax=ax)
 
-# Graficar la línea de tendencia global
-sns.regplot(data=df, x="Estacion", y="CambioPorcentual", scatter=False, 
-            line_kws={'color': 'black', 'linewidth': 2, 'ls': '--'}, 
-            ci=95, label='Línea de tendencia global')
+    ax.set_title(titulo, fontsize=20)
+    ax.set_xlabel('', fontsize=14)
+    ax.set_ylabel('% Variación', fontsize=18)
+    ax.tick_params(axis='both', labelsize=16)
+    ax.tick_params(axis='x')
+    # ❌ Eliminar leyenda local del subplot (si existe)
+    if ax.get_legend() is not None:
+        ax.get_legend().remove()
 
-# Personalizar el gráfico
-plt.title('Líneas de Tendencia del Cambio Porcentual de Ganancia por Estación y Territorio')
-plt.xlabel('Estación')
-plt.ylabel('Cambio Porcentual de la Ganancia')
-plt.legend(title='Territorio', bbox_to_anchor=(1.05, 1), loc='upper left')
-plt.xticks(rotation=45)
-plt.tight_layout()
+# Leyenda abajo (fuera de la grilla)
+handles, labels = axs[1, 1].get_legend_handles_labels()
+fig.legend(handles, labels, title='Territorio', fontsize=16, title_fontsize=18,
+           loc='lower center', bbox_to_anchor=(0.5, -0.03), ncol=4)
 
-# Mostrar el gráfico
+plt.tight_layout(rect=[0, 0.05, 1, 0.95])
 plt.show()
