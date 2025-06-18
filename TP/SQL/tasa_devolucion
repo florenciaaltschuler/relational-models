@@ -1,0 +1,7 @@
+SELECT 
+    COUNT(DISTINCT h.SalesOrderID) AS TotalSales,
+    COUNT(DISTINCT sr.SalesOrderID) AS ReturnedSales,
+    CAST(COUNT(DISTINCT sr.SalesOrderID) AS FLOAT) / COUNT(DISTINCT h.SalesOrderID) AS ReturnRate
+FROM Sales.SalesOrderHeader h
+LEFT JOIN Sales.SalesOrderHeaderSalesReason sr
+    ON h.SalesOrderID = sr.SalesOrderID;
