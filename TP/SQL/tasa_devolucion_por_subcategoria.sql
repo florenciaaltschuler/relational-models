@@ -1,4 +1,3 @@
-
 SELECT 
   ps.Name AS Subcategory,
   COUNT(DISTINCT sr.SalesOrderID) AS ReturnCount,
@@ -11,4 +10,6 @@ LEFT JOIN Sales.SalesOrderHeader h_all ON d_all.SalesOrderID = h_all.SalesOrderI
 LEFT JOIN Sales.SalesOrderHeaderSalesReason sr ON h_all.SalesOrderID = sr.SalesOrderID
 GROUP BY ps.Name
 HAVING COUNT(DISTINCT d_all.SalesOrderID) > 0
+   AND CAST(COUNT(DISTINCT sr.SalesOrderID) AS FLOAT) / NULLIF(COUNT(DISTINCT d_all.SalesOrderID), 0) > 0
 ORDER BY ReturnRate DESC;
+
