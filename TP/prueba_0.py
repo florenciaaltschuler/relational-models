@@ -7,7 +7,7 @@ import utils
 sql_conn = utils.SQLConnection()
 
 # Ejecutar la consulta para obtener los datos pivotados
-df = sql_conn.run_query("ganancia_por_estacion_año.sql")
+df = sql_conn.run_sql_file("ganancia_por_estacion_año.sql")
 
 # Verificar las primeras filas del DataFrame para asegurarse de que la columna 'CambioPorcentual' existe
 print(df.head())

@@ -14,14 +14,14 @@ sql_conn = utils.SQLConnection()
 
 
 def prueba():
-    df1 = sql_conn.run_query("consulta_geo.sql")
+    df1 = sql_conn.run_sql_file("consulta_geo.sql")
     print(df1)
     del df1
 
 
 def tiempo_entrega_por_pedido():
     # 1. Tiempo de entrega por pedido
-    df1 = sql_conn.run_query("tiempo_entrega_por_pedido.sql")
+    df1 = sql_conn.run_sql_file("tiempo_entrega_por_pedido.sql")
 
     delivery_days = df1["DeliveryDays"]
     delivery_days_nona = delivery_days.dropna()
@@ -44,7 +44,7 @@ def tiempo_entrega_por_pedido():
 
 def motivos_devoluciones():
     # 4. Motivos de devoluciones - Gráfico circular
-    df4 = sql_conn.run_query("motivos_devoluciones.sql")
+    df4 = sql_conn.run_sql_file("motivos_devoluciones.sql")
     utils_plot.plot_pie(
         arr_vals=df4["TotalReturns"],
         arr_labels=df4["Reason"],
@@ -57,7 +57,7 @@ def motivos_devoluciones():
 
 def devoluciones_por_producto():
     # 5. Devoluciones por producto - Barras horizontales
-    df5 = sql_conn.run_query("devoluciones_por_producto.sql").head(10)
+    df5 = sql_conn.run_sql_file("devoluciones_por_producto.sql").head(10)
 
     utils_plot.plot_barh(
         y_vals=df5["Product"],
@@ -73,7 +73,7 @@ def devoluciones_por_producto():
 
 # 6. Devoluciones por territorio - Barras horizontales
 def devoluciones_por_territorio():
-    df6 = sql_conn.run_query("devoluciones_por_territorio.sql")
+    df6 = sql_conn.run_sql_file("devoluciones_por_territorio.sql")
     df6.sort_values("ReturnCount", ascending=False, inplace=True)
     utils_plot.plot_barh(
         y_vals=df6["Territory"],
@@ -89,7 +89,7 @@ def devoluciones_por_territorio():
 
 # 7. Devoluciones por subcategoría - Barras horizontales
 def devoluciones_por_subcategoria():
-    df7 = sql_conn.run_query("devoluciones_por_subcategoria.sql")
+    df7 = sql_conn.run_sql_file("devoluciones_por_subcategoria.sql")
     df7.sort_values("ReturnCount", ascending=True, inplace=True)
     utils_plot.plot_barh(
         y_vals=df7["Subcategory"],
@@ -105,7 +105,7 @@ def devoluciones_por_subcategoria():
 
 def devoluciones_por_categoria():
     # 8. Devoluciones por categoría - Barras horizontales
-    df8 = sql_conn.run_query("devoluciones_por_categoria.sql")
+    df8 = sql_conn.run_sql_file("devoluciones_por_categoria.sql")
     df8.sort_values("ReturnCount", ascending=True, inplace=True)
     utils_plot.plot_barh(
         y_vals=df8["Category"],
@@ -121,7 +121,7 @@ def devoluciones_por_categoria():
 
 def tasa_devolucion_por_producto():
     # 9. Tasa de devolución por producto
-    df9 = sql_conn.run_query("tasa_devolucion_por_producto.sql").head(10)
+    df9 = sql_conn.run_sql_file("tasa_devolucion_por_producto.sql").head(10)
 
     utils_plot.plot_barh(
         y_vals=df9["Product"],
@@ -137,7 +137,7 @@ def tasa_devolucion_por_producto():
 
 def tasa_devolucion_por_subcategoria():
     # 10. Tasa de devolución por subcategoría
-    df10 = sql_conn.run_query("tasa_devolucion_por_subcategoria.sql").head(50)
+    df10 = sql_conn.run_sql_file("tasa_devolucion_por_subcategoria.sql").head(50)
 
     utils_plot.plot_barh(
         y_vals=df10["Subcategory"],
@@ -153,7 +153,7 @@ def tasa_devolucion_por_subcategoria():
 
 def tasa_devolucion_por_categoria():
     # 11. Tasa de devolución por categoría
-    df11 = sql_conn.run_query("tasa_devolucion_por_categoria.sql")
+    df11 = sql_conn.run_sql_file("tasa_devolucion_por_categoria.sql")
 
     utils_plot.plot_barh(
         y_vals=df11["Category"],
@@ -169,7 +169,7 @@ def tasa_devolucion_por_categoria():
 
 def tasa_devolucion_por_territorio():
     # 12. Tasa de devolución por territorio
-    df12 = sql_conn.run_query("tasa_devolucion_por_territorio.sql")
+    df12 = sql_conn.run_sql_file("tasa_devolucion_por_territorio.sql")
     df12.sort_values("ReturnRate", ascending=True, inplace=True)
 
     utils_plot.plot_barh(
@@ -186,7 +186,7 @@ def tasa_devolucion_por_territorio():
 
 def distancia_ventas_por_tienda():
     # 13. Distancia entre tienda y destino de envío
-    df13 = sql_conn.run_query("distancia_ventas_por_tienda.sql")
+    df13 = sql_conn.run_sql_file("distancia_ventas_por_tienda.sql")
 
     # Boxplot de distancias por tienda (top 10 por cantidad de registros)
     top_tiendas = df13["StoreName"].value_counts().head(10).index
@@ -230,7 +230,7 @@ def distancia_ventas_por_tienda():
 
 def ganancia_por_territorio():
     # 6. Ganancias por territorio - Barras horizontales
-    df14 = sql_conn.run_query("ganancia.sql")
+    df14 = sql_conn.run_sql_file("ganancia.sql")
     plt.figure(figsize=(10, 6))
     plt.barh(df14["Territorio"], df14["GananciaTotal"], color="lightgreen")
     plt.title("Ganancia Total por Territorio")
@@ -241,7 +241,7 @@ def ganancia_por_territorio():
 
 def ganancia_por_ano():
     # 1. Ganancia por Año
-    df_ano = sql_conn.run_query("ganancia_por_año.sql")
+    df_ano = sql_conn.run_sql_file("ganancia_por_año.sql")
     df_ano.plot(
         kind="bar", x="Territorio", y="VentaTotal", stacked=True, figsize=(12, 6)
     )
@@ -254,7 +254,7 @@ def ganancia_por_ano():
 
 def ganancia_por_estacion_año():
     # Ejecutar la consulta para obtener los datos pivotados
-    df = sql_conn.run_query("ganancia_por_estacion_año.sql")
+    df = sql_conn.run_sql_file("ganancia_por_estacion_año.sql")
 
     # Verificar las primeras filas del DataFrame para asegurarse de que la columna 'CambioPorcentual' existe
     print(df.head())
@@ -305,7 +305,7 @@ def ganancia_por_estacion_año():
 
 def ganancia_por_mes_año():
     # 2. Ganancia por Mes y Año (Ejemplo: Agrupado por mes y año por territorio)
-    df_mes_ano = sql_conn.run_query("ganancia_por_mes_año.sql")
+    df_mes_ano = sql_conn.run_sql_file("ganancia_por_mes_año.sql")
 
     # Crear un FacetGrid para tener un gráfico por territorio
     g = sns.FacetGrid(
@@ -325,7 +325,7 @@ def ganancia_por_mes_año():
 
 def mapa_tiendas_envios():
     # 14. Mapa: Ubicación de tiendas y destinos de envío conectados
-    df_map = sql_conn.run_query("distancia_ventas_por_tienda.sql")
+    df_map = sql_conn.run_sql_file("distancia_ventas_por_tienda.sql")
 
     df_map = df_map.dropna(
         subset=["StoreLat", "StoreLong", "DeliveryLat", "DeliveryLong"]

@@ -7,11 +7,11 @@ import utils
 
 sql_conn = utils.SQLConnection()
 
-df1 = sql_conn.run_query("consulta_geo.sql")
+df1 = sql_conn.run_sql_file("consulta_geo.sql")
 print(df1)
 
 # 1. Tiempo de entrega por pedido - Histograma
-df1 = sql_conn.run_query("tiempo_entrega_por_pedido.sql")
+df1 = sql_conn.run_sql_file("tiempo_entrega_por_pedido.sql")
 plt.figure(figsize=(10, 6))
 plt.hist(df1["DeliveryDays"], bins=20, color="skyblue", edgecolor="black")
 plt.title("Distribución de Tiempos de Entrega (días)")
@@ -42,7 +42,7 @@ print("Máximo:", delivery_days.max())
 
 
 # 4. Motivos de devoluciones - Gráfico circular
-df4 = sql_conn.run_query("motivos_devoluciones.sql")
+df4 = sql_conn.run_sql_file("motivos_devoluciones.sql")
 plt.figure(figsize=(8, 6))
 plt.pie(df4["TotalReturns"], labels=df4["Reason"], autopct="%1.1f%%", startangle=140)
 plt.title("Motivos de Devolución")
@@ -50,7 +50,7 @@ plt.tight_layout()
 plt.show()
 
 # 5. Devoluciones por producto - Barras horizontales
-df5 = sql_conn.run_query("devoluciones_por_producto.sql").head(10)
+df5 = sql_conn.run_sql_file("devoluciones_por_producto.sql").head(10)
 plt.figure(figsize=(10, 6))
 plt.barh(df5["Product"], df5["ReturnCount"], color="salmon")
 plt.title("Top 10 Productos con Más Devoluciones")
@@ -59,7 +59,7 @@ plt.tight_layout()
 plt.show()
 
 # 6. Devoluciones por territorio - Barras horizontales
-df6 = sql_conn.run_query("devoluciones_por_territorio.sql")
+df6 = sql_conn.run_sql_file("devoluciones_por_territorio.sql")
 df6.sort_values("ReturnCount", ascending=False, inplace=True)
 plt.figure(figsize=(10, 6))
 plt.barh(df6["Territory"], df6["ReturnCount"], color="mediumpurple")
@@ -69,7 +69,7 @@ plt.tight_layout()
 plt.show()
 
 # 7. Devoluciones por subcategoría - Barras horizontales
-df7 = sql_conn.run_query("devoluciones_por_subcategoria.sql")
+df7 = sql_conn.run_sql_file("devoluciones_por_subcategoria.sql")
 df7.sort_values("ReturnCount", ascending=True, inplace=True)
 plt.figure(figsize=(10, 6))
 plt.barh(df7["Subcategory"], df7["ReturnCount"], color="darkcyan")
@@ -79,7 +79,7 @@ plt.tight_layout()
 plt.show()
 
 # 8. Devoluciones por categoría - Barras horizontales
-df8 = sql_conn.run_query("devoluciones_por_categoria.sql")
+df8 = sql_conn.run_sql_file("devoluciones_por_categoria.sql")
 df8.sort_values("ReturnCount", ascending=True, inplace=True)
 plt.figure(figsize=(8, 5))
 plt.barh(df8["Category"], df8["ReturnCount"], color="steelblue")
@@ -89,7 +89,7 @@ plt.tight_layout()
 plt.show()
 
 # 9. Tasa de devolución por producto
-df9 = sql_conn.run_query("tasa_devolucion_por_producto.sql").head(10)
+df9 = sql_conn.run_sql_file("tasa_devolucion_por_producto.sql").head(10)
 plt.figure(figsize=(10, 6))
 plt.barh(df9["Product"], df9["ReturnRate"], color="firebrick")
 plt.title("Tasa de Devolución por Producto")
@@ -98,7 +98,7 @@ plt.tight_layout()
 plt.show()
 
 # 10. Tasa de devolución por subcategoría
-df10 = sql_conn.run_query("tasa_devolucion_por_subcategoria.sql").head(50)
+df10 = sql_conn.run_sql_file("tasa_devolucion_por_subcategoria.sql").head(50)
 plt.figure(figsize=(10, 6))
 plt.barh(df10["Subcategory"], df10["ReturnRate"], color="darkorange")
 plt.title("Tasa de Devolución por Subcategoría")
@@ -107,7 +107,7 @@ plt.tight_layout()
 plt.show()
 
 # 11. Tasa de devolución por categoría
-df11 = sql_conn.run_query("tasa_devolucion_por_categoria.sql")
+df11 = sql_conn.run_sql_file("tasa_devolucion_por_categoria.sql")
 plt.figure(figsize=(8, 5))
 plt.barh(df11["Category"], df11["ReturnRate"], color="seagreen")
 plt.title("Tasa de Devolución por Categoría")
@@ -116,7 +116,7 @@ plt.tight_layout()
 plt.show()
 
 # 12. Tasa de devolución por territorio
-df12 = sql_conn.run_query("tasa_devolucion_por_territorio.sql")
+df12 = sql_conn.run_sql_file("tasa_devolucion_por_territorio.sql")
 df12.sort_values("ReturnRate", ascending=True, inplace=True)
 plt.figure(figsize=(10, 6))
 plt.barh(df12["Territory"], df12["ReturnRate"], color="royalblue")
@@ -126,7 +126,7 @@ plt.tight_layout()
 plt.show()
 
 # 13. Distancia entre tienda y destino de envío
-df13 = sql_conn.run_query("distancia_ventas_por_tienda.sql")
+df13 = sql_conn.run_sql_file("distancia_ventas_por_tienda.sql")
 
 # Boxplot de distancias por tienda (top 10 por cantidad de registros)
 top_tiendas = df13["StoreName"].value_counts().head(10).index
@@ -169,7 +169,7 @@ plt.show()
 
 
 # 6. Ganancias por territorio - Barras horizontales
-df14 = sql_conn.run_query("ganancia.sql")
+df14 = sql_conn.run_sql_file("ganancia.sql")
 plt.figure(figsize=(10, 6))
 plt.barh(df14["Territorio"], df14["GananciaTotal"], color="lightgreen")
 plt.title("Ganancia Total por Territorio")
@@ -178,7 +178,7 @@ plt.tight_layout()
 plt.show()
 
 # 1. Ganancia por Año
-df_ano = sql_conn.run_query("ganancia_por_año.sql")
+df_ano = sql_conn.run_sql_file("ganancia_por_año.sql")
 df_ano.plot(kind="bar", x="Territorio", y="VentaTotal", stacked=True, figsize=(12, 6))
 plt.title("Ganancia por Territorio a lo Largo de los Años")
 plt.xlabel("Territorio")
@@ -188,7 +188,7 @@ plt.show()
 
 
 # Ejecutar la consulta para obtener los datos pivotados
-df = sql_conn.run_query("ganancia_por_estacion_año.sql")
+df = sql_conn.run_sql_file("ganancia_por_estacion_año.sql")
 
 # Verificar las primeras filas del DataFrame para asegurarse de que la columna 'CambioPorcentual' existe
 print(df.head())
@@ -236,7 +236,7 @@ plt.tight_layout()
 # Mostrar el gráfico
 plt.show()
 # 2. Ganancia por Mes y Año (Ejemplo: Agrupado por mes y año por territorio)
-df_mes_ano = sql_conn.run_query("ganancia_por_mes_año.sql")
+df_mes_ano = sql_conn.run_sql_file("ganancia_por_mes_año.sql")
 
 # Crear un FacetGrid para tener un gráfico por territorio
 g = sns.FacetGrid(

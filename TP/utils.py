@@ -1,6 +1,5 @@
 import os
 import platform
-import pyodbc
 import pandas as pd
 import sqlalchemy
 
@@ -24,7 +23,6 @@ class SQLConnection:
     def __init__(self):
         is_windows = platform.system() == "Windows"
         self.driver_ = self.driver_windows if is_windows else self.driver_ubuntu
-        self.conn = None
         self.engine = None
         self.create()
 
@@ -43,33 +41,38 @@ class SQLConnection:
         )
         self.engine = sqlalchemy.create_engine(conn_url)
 
-    def run_query(self, sql_fn):
+    def run_query(self, query: str) -> pd.DataFrame:
+        """
+        Ejecuta una consulta SQL y devuelve el resultado como un pd.DataFrame.
+        """
+        assert self.engine is not None, "Error: No se creó la conexión."
+        # Convertir a objeto de texto SQLAlchemy
+        query = sqlalchemy.text(query)  
+        with self.engine.begin() as conn:
+            return pd.read_sql_query(query, conn)
+
+    def run_sql_file(self, sql_fn: str) -> pd.DataFrame:
+        """
+        Ejectuta una consulta SQL a partir de un archivo .sql y 
+        devuelve el resultado como un pd.DataFrame.
+        """
         fp = os.path.join(SQL_DIRPATH_, sql_fn)
         assert os.path.isfile(fp), f'El archivo "{fp}" no existe.'
         with open(fp, "r", encoding="utf-8") as f:
             query = f.read()
-        query = sqlalchemy.text(query)  # Convertir a objeto de texto SQLAlchemy
-        with self.engine.begin() as conn:
-            return pd.read_sql_query(query, conn)
+        return self.run_query(query)
 
     def close(self):
-        if self.conn is not None:
-            self.conn.close()
-            self.conn = None
-            print("Conexión cerrada.")
-        else:
-            print("No hay conexión para cerrar.")
+        if self.engine is not None:
+            self.engine.dispose()
+            self.engine = None
 
 
 if __name__ == "__main__":
-    try:
-        sql_conn = SQLConnection()
-        cursor = sql_conn.conn.cursor()
-        cursor.execute("SELECT @@version;")
-        row = cursor.fetchone()
-        if row:
-            print("-" * 10)
-            print("SQL Server version:\n", row[0])
-            print("-" * 10)
-    except Exception as e:
-        raise e
+    sql_conn = SQLConnection()
+    df = sql_conn.run_query("SELECT @@version as version;")
+    assert len(df) == 1, f"Se devolvieron {len(df)} filas cuando se esperaba 1."
+    sql_ver = df["version"][0]
+    print("-"*10)
+    print(sql_ver)
+    print("-"*10)

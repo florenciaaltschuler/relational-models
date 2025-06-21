@@ -6,7 +6,7 @@ import utils
 
 sql_conn = utils.SQLConnection()
 
-df = sql_conn.run_query("prueba_sql.sql")
+df = sql_conn.run_sql_file("prueba_sql.sql")
 
 territorios = df["Name"]
 x = np.arange(len(territorios))  # Posiciones para las barras
