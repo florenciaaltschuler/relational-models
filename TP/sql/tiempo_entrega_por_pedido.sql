@@ -4,4 +4,4 @@ SELECT
   TerritoryID,
   SalesPersonID
 FROM Sales.SalesOrderHeader
-WHERE ShipDate IS NOT NULL;
+WHERE ShipDate IS NOT NULL AND OrderDate IS NOT NULL;

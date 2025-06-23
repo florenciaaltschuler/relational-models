@@ -17,7 +17,7 @@ def plot_hist(arr_vals, n_bins, title, xlabel, ylabel, show=False, save_fn=None)
     if save_fn is not None:
         save_fp = os.path.join(utils.PLOTS_DIRPATH_, save_fn)
         plt.savefig(save_fp)
-        print(f'Saved plot to "{save_fp}".')
+        print(f'Figura guardada en "{save_fp}".')
     if show:
         plt.show()
     plt.close(fig)
@@ -36,7 +36,7 @@ def plot_pie(arr_vals, arr_labels, title, show=False, save_fn=None):
     if save_fn is not None:
         save_fp = os.path.join(utils.PLOTS_DIRPATH_, save_fn)
         plt.savefig(save_fp)
-        print(f'Saved plot to "{save_fp}".')
+        print(f'Figura guardada en "{save_fp}".')
     if show:
         plt.show()
     plt.close(fig)
@@ -51,7 +51,7 @@ def plot_barh(y_vals, w_vals, title, xlabel, color="salmon", show=False, save_fn
     if save_fn is not None:
         save_fp = os.path.join(utils.PLOTS_DIRPATH_, save_fn)
         plt.savefig(save_fp)
-        print(f'Saved plot to "{save_fp}".')
+        print(f'Figura guardada en "{save_fp}".')
     if show:
         plt.show()
     plt.close(fig)

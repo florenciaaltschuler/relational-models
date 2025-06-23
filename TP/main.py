@@ -1,14 +1,14 @@
 import os
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 import folium
 from folium.plugins import MarkerCluster
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 import utils
 import utils_plot
 import utils_print
 
+sns.set_context("talk")
 
 sql_conn = utils.SQLConnection()
 
@@ -23,11 +23,8 @@ def tiempo_entrega_por_pedido():
     # 1. Tiempo de entrega por pedido
     df1 = sql_conn.run_sql_file("tiempo_entrega_por_pedido.sql")
 
-    delivery_days = df1["DeliveryDays"]
-    delivery_days_nona = delivery_days.dropna()
-
     utils_plot.plot_hist(
-        arr_vals=delivery_days,
+        arr_vals=df1["DeliveryDays"],
         title="Distribución de Tiempos de Entrega (días)",
         xlabel="Días de Entrega",
         ylabel="Cantidad de Pedidos",
@@ -37,7 +34,7 @@ def tiempo_entrega_por_pedido():
     )
 
     utils_print.print_basic_statistics(
-        delivery_days_nona, "tiempos de entrega por pedido"
+        df1["DeliveryDays"].dropna(), "tiempos de entrega por pedido"
     )
     del df1
 
@@ -185,89 +182,71 @@ def tasa_devolucion_por_territorio():
 
 
 def distancia_ventas_por_tienda():
-    # 13. Distancia entre tienda y destino de envío
-    df13 = sql_conn.run_sql_file("distancia_ventas_por_tienda.sql")
+    df13 = sql_conn.run_sql_file("distancia_ventas_por_tienda_2.sql")
 
-    # Boxplot de distancias por tienda (top 10 por cantidad de registros)
-    top_tiendas = df13["StoreName"].value_counts().head(10).index
-    df_top = df13[df13["StoreName"].isin(top_tiendas)]
-
-    # Calcular el promedio de distancia por tienda
-    store_avg_distance = (
-        df_top.groupby("StoreName")["DistanceKm"].mean().sort_values(ascending=False)
-    )
-
-    # Ordenar df_top por el promedio de distancia de mayor a menor
-    df_top["StoreName"] = pd.Categorical(
-        df_top["StoreName"], categories=store_avg_distance.index, ordered=True
-    )
-    df_top = df_top.sort_values("StoreName")
-
-    # Crear figura y tamaño del gráfico
-    plt.figure(figsize=(12, 6))
-
-    # Crear el boxplot de distancias por tienda (ordenado)
-    ax = df_top.boxplot(column="DistanceKm", by="StoreName", grid=False, rot=45)
-
-    # Agregar los puntos individuales (scatter plot) sobre el boxplot
-    for i, store_name in enumerate(store_avg_distance.index, start=1):
-        store_data = df_top[df_top["StoreName"] == store_name]
-        plt.scatter(
-            [i] * len(store_data), store_data["DistanceKm"], alpha=0.5, color="blue"
-        )
-
-    # Personalizar el gráfico
+    df13.boxplot(column="DistanceKm", by="StoreName", grid=False, rot=60, figsize=(15, 10))
+   
     plt.title("Distribución de Distancias entre Tienda y Entrega")
-    plt.suptitle("")  # Eliminar el título por defecto
+    plt.suptitle("")
     plt.xlabel("Tienda")
     plt.ylabel("Distancia (km)")
 
-    # Ajustar el diseño y mostrar el gráfico
-    # plt.tight_layout()
-    plt.show()
-    plt.savefig(os.path.join(utils.PLOTS_DIRPATH_, "distancia_ventas_por_tienda.png"))
+    plt.tight_layout()
+    save_fp = os.path.join(utils.PLOTS_DIRPATH_, "distancia_ventas_por_tienda_2.png")
+    print(f'Figura guardada en "{save_fp}".')
+    plt.savefig(save_fp)
+    # plt.show()
+    plt.close()
 
 
 def ganancia_por_territorio():
     # 6. Ganancias por territorio - Barras horizontales
     df14 = sql_conn.run_sql_file("ganancia.sql")
-    plt.figure(figsize=(10, 6))
-    plt.barh(df14["Territorio"], df14["GananciaTotal"], color="lightgreen")
-    plt.title("Ganancia Total por Territorio")
-    plt.xlabel("Ganancia Total")
-    plt.tight_layout()
-    plt.show()
+    utils_plot.plot_barh(
+        y_vals=df14["Territorio"],
+        w_vals=df14["GananciaTotal"],
+        title="Ganancia Total por Territorio",
+        xlabel="Ganancia Total",
+        color="lightgreen",
+        show=False,
+        save_fn="ganancia_por_territorio.png",
+    )
+    del df14
 
 
-def ganancia_por_ano():
+def ganancia_por_año():
     # 1. Ganancia por Año
     df_ano = sql_conn.run_sql_file("ganancia_por_año.sql")
-    df_ano.plot(
-        kind="bar", x="Territorio", y="VentaTotal", stacked=True, figsize=(12, 6)
+
+    df_ano = df_ano.set_index('Territorio')
+
+    ax = df_ano.plot(
+        kind="bar", rot=60, stacked=True, figsize=(12, 6)
     )
-    plt.title("Ganancia por Territorio a lo Largo de los Años")
-    plt.xlabel("Territorio")
-    plt.ylabel("Venta Total")
+    ax.legend(title="Año", loc="best")
+
+    ax.set_title("Ganancia por territorio por año (normalizada por cant. de días)")
+    ax.set_xlabel("Territorio")
+    ax.set_ylabel("Ganancia total (normalizada)")
+
     plt.tight_layout()
-    plt.show()
+    save_fp = os.path.join(utils.PLOTS_DIRPATH_, "ganancia_por_año.png")
+    print(f'Figura guardada en "{save_fp}".')
+    plt.savefig(save_fp)
+    # plt.show()
+    plt.close()
 
 
 def ganancia_por_estacion_año():
-    # Ejecutar la consulta para obtener los datos pivotados
     df = sql_conn.run_sql_file("ganancia_por_estacion_año.sql")
+ 
+    sns.set_theme(style="whitegrid")
 
-    # Verificar las primeras filas del DataFrame para asegurarse de que la columna 'CambioPorcentual' existe
-    print(df.head())
-
-    sns.set(style="whitegrid")
-
-    # Crear una figura para el gráfico
     plt.figure(figsize=(14, 8))
 
-    # Asignar una paleta de colores para los territorios
     paleta_colores = sns.color_palette("tab10", n_colors=len(df["Territorio"].unique()))
 
-    # Graficar una línea para cada año y territorio
+    # Graficar tendencia para cada año y territorio
     for i, (territorio, grupo) in enumerate(df.groupby("Territorio")):
         sns.lineplot(
             data=grupo,
@@ -279,107 +258,157 @@ def ganancia_por_estacion_año():
         )
 
     # Graficar la línea de tendencia global
-    sns.regplot(
-        data=df,
-        x="Estacion",
-        y="CambioPorcentual",
-        scatter=False,
-        line_kws={"color": "black", "linewidth": 2, "ls": "--"},
-        ci=95,
-        label="Línea de tendencia global",
-    )
+    # x_numeric = pd.Categorical(df['Estacion']).codes
+    # categories = pd.Categorical(df['Estacion']).categories
+    # ax = sns.regplot(
+    #     x=x_numeric,
+    #     y=df["CambioPorcentual"],
+    #     scatter=False,
+    #     line_kws={"color": "black", "linewidth": 2, "ls": "--"},
+    #     ci=95,
+    #     label="Línea de tendencia global",
+    # )
+    # ax.set_xticks(range(len(categories)))
+    # ax.set_xticklabels(categories)
 
-    # Personalizar el gráfico
     plt.title(
-        "Líneas de Tendencia del Cambio Porcentual de Ganancia por Estación y Territorio"
+        "Cambio porcentual de ganancia por estación y territorio"
     )
     plt.xlabel("Estación")
-    plt.ylabel("Cambio Porcentual de la Ganancia")
-    plt.legend(title="Territorio", bbox_to_anchor=(1.05, 1), loc="upper left")
-    plt.xticks(rotation=45)
-    plt.tight_layout()
+    plt.ylabel("Cambio porcentual de ganancia")
+    plt.legend(title="Territorio", bbox_to_anchor=(1.05, 1), loc="best")
+    plt.xticks(rotation=60)
 
-    # Mostrar el gráfico
-    plt.show()
+    plt.tight_layout()
+    save_fp = os.path.join(utils.PLOTS_DIRPATH_, "ganancia_por_estacion_año.png")
+    print(f'Figura guardada en"{save_fp}".')
+    plt.savefig(save_fp)
+    # plt.show()
+    plt.close()
 
 
 def ganancia_por_mes_año():
-    # 2. Ganancia por Mes y Año (Ejemplo: Agrupado por mes y año por territorio)
+    # 2. Ganancia agrupada por mes y año por territorio
     df_mes_ano = sql_conn.run_sql_file("ganancia_por_mes_año.sql")
+    
+    g = sns.FacetGrid(df_mes_ano, col="TerritoryName", col_wrap=3, height=4, aspect=1.5, sharex=False)
+    g.map(sns.lineplot, "MonthStart", "TotalSales", marker="o", color="coral")
 
-    # Crear un FacetGrid para tener un gráfico por territorio
-    g = sns.FacetGrid(
-        df_mes_ano, col="Territorio", col_wrap=4, height=4
-    )  # 4 gráficos por fila
-    g.map(sns.lineplot, "Mes", "VentaTotal", marker="o", color="coral")
-
-    # Personalizar los gráficos
-    g.set_axis_labels("Mes", "Venta Total")
+    g.set_axis_labels("Fecha", "Total ventas")
     g.set_titles("{col_name}")
-    g.set_xticklabels(rotation=45)
-    g.fig.suptitle("Ganancia por Mes y Año para cada Territorio", fontsize=16)
+    g.set_xticklabels(rotation=60)
+    g.figure.suptitle("Ganancia a lo largo del tiempo para cada territorio", fontsize=22)
+    # plt.subplots_adjust(top=0.9)  # Ajustar el título para no sobreponerse
+
     plt.tight_layout()
-    plt.subplots_adjust(top=0.9)  # Ajustar el título para no sobreponerse
-    plt.show()
+    save_fp = os.path.join(utils.PLOTS_DIRPATH_, "ganancia_por_mes_año.png")
+    print(f'Figura guardada en "{save_fp}".')
+    plt.savefig(save_fp)
+    # plt.show()
+    plt.close()
 
 
 def mapa_tiendas_envios():
     # 14. Mapa: Ubicación de tiendas y destinos de envío conectados
     df_map = sql_conn.run_sql_file("distancia_ventas_por_tienda.sql")
 
-    df_map = df_map.dropna(
-        subset=["StoreLat", "StoreLong", "DeliveryLat", "DeliveryLong"]
+    df_stores = df_map[['StoreName', 'StoreLat', 'StoreLong']].drop_duplicates()
+    store_coords = set(zip(
+        df_stores['StoreLat'].round(4),
+        df_stores['StoreLong'].round(4) ))
+
+    coord_to_store = {}
+    for _, row in df_stores.iterrows():
+        key = (round(row['StoreLat'], 4), round(row['StoreLong'], 4))
+        coord_to_store[key] = row['StoreName']
+
+    df_deliveries = df_map[df_map["DistanceKm"] > 0.01]
+    df_deliveries = df_deliveries[['StoreName', 'StoreLat', 'StoreLong', 'DeliveryLat', 'DeliveryLong']].drop_duplicates()
+
+    df_deliveries['IsStoreDelivery'] = df_deliveries.apply(
+        lambda row: (round(row['DeliveryLat'], 4), round(row['DeliveryLong'], 4)) in store_coords,
+        axis=1
     )
 
-    # Crear mapa centrado en un punto medio aproximado
-    center_lat = df_map["StoreLat"].mean()
-    center_lon = df_map["StoreLong"].mean()
-    m = folium.Map(location=[center_lat, center_lon], zoom_start=4)
+    df_deliveries['DeliveryStoreName'] = df_deliveries.apply(
+    lambda row: coord_to_store.get(
+        (round(row['DeliveryLat'], 4), 
+         round(row['DeliveryLong'], 4)))
+    if row['IsStoreDelivery'] else None,
+    axis=1
+    )
 
-    # Agrupar marcadores por tienda
-    store_group = MarkerCluster(name="Tiendas").add_to(m)
-    delivery_group = MarkerCluster(name="Destinos").add_to(m)
+    center_lat = df_stores["StoreLat"].mean()
+    center_lon = df_stores["StoreLong"].mean()
+    m = folium.Map(location=[center_lat, center_lon], zoom_start=5)
+
+    store_layer = folium.FeatureGroup(name='Tiendas')
+    transfer_layer = folium.FeatureGroup(name='Transferencias')
+    delivery_layer = folium.FeatureGroup(name='Entregas')
 
     # Agregar marcadores de tiendas
-    for store in (
-        df_map[["StoreName", "StoreLat", "StoreLong"]]
-        .drop_duplicates()
-        .itertuples(index=False)
-    ):
+    for _, store in df_stores.iterrows():
+        tooltip = f"{store['StoreName']}"
         folium.Marker(
-            location=[store.StoreLat, store.StoreLong],
-            popup=f"Tienda: {store.StoreName}",
-            icon=folium.Icon(color="blue", icon="shopping-cart", prefix="fa"),
-        ).add_to(store_group)
+            location=[store['StoreLat'], store['StoreLong']],
+            tooltip=tooltip,
+            icon=folium.Icon(color='green', icon='shopping-cart', prefix='fa')
+        ).add_to(store_layer)
 
-    # Agregar líneas entre tienda y destino de envío
-    for row in df_map.itertuples():
-        folium.PolyLine(
-            locations=[
-                (row.StoreLat, row.StoreLong),
-                (row.DeliveryLat, row.DeliveryLong),
-            ],
-            color="red",
-            weight=1,
-            opacity=0.5,
-        ).add_to(m)
+    n_deliveries = 0
+    n_transfers = 0
+    n_tot_deliveries = 0
+    n_transfers_same_name = 0
 
-        # Opcional: marcar puntos de entrega (agrupados)
-        folium.CircleMarker(
-            location=(row.DeliveryLat, row.DeliveryLong),
-            radius=2,
-            color="green",
-            fill=True,
-            fill_opacity=0.6,
-        ).add_to(delivery_group)
+    for _, row in df_deliveries.iterrows():
+        locations = [
+            [row['StoreLat'], row['StoreLong']],
+            [row['DeliveryLat'], row['DeliveryLong']]
+        ]
+        n_tot_deliveries += 1
+        if row.IsStoreDelivery:
+            n_transfers += 1
+            if row['StoreName'] == row['DeliveryStoreName']:
+                n_transfers_same_name += 1
 
-    m.save("mapa_tiendas_envios.html")
-    print("Mapa guardado como 'mapa_tiendas_envios.html'")
+            folium.PolyLine(
+                locations=locations,
+                color='purple',
+                weight=2.5
+            ).add_to(transfer_layer)
+        else:
+            n_deliveries += 1
+            folium.PolyLine(
+                locations=locations,
+                color='red',
+                weight=1.5
+            ).add_to(delivery_layer)
+
+    print("-"*30)
+    print(f"Total deliveries: {n_tot_deliveries}")
+    print(f"Total deliveries to stores: {n_transfers}")
+    print(f"Total deliveries to stores (same name): {n_transfers_same_name}")
+    print(f"Total deliveries to other destinations: {n_deliveries}")
+    print("-"*30)
+
+    store_layer.add_to(m)
+    transfer_layer.add_to(m)
+    delivery_layer.add_to(m)
+    folium.LayerControl(collapsed=False).add_to(m)
+
+    fp = os.path.join(utils.PLOTS_DIRPATH_, "mapa_tiendas_envios.html")
+    m.save(fp)
+    print(f'Mapa guardado en "{fp}".')
+
+def cohortes():
+    df = sql_conn.run_sql_file("cohortes.sql")
+
+    print(df.head())
 
 
 if __name__ == "__main__":
-    prueba()
-    tiempo_entrega_por_pedido()
+    # prueba()
+    # tiempo_entrega_por_pedido()
     # motivos_devoluciones()
     # devoluciones_por_producto()
     # devoluciones_por_territorio()
@@ -391,7 +420,10 @@ if __name__ == "__main__":
     # tasa_devolucion_por_territorio()
     # distancia_ventas_por_tienda()
     # ganancia_por_territorio()
-    # ganancia_por_ano()
+    # ganancia_por_año()
     # ganancia_por_estacion_año()
     # ganancia_por_mes_año()
     # mapa_tiendas_envios()
+    cohortes()
+
+    sql_conn.close()
