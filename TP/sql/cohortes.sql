@@ -3,49 +3,35 @@ WITH
     AS
     (
         SELECT
-            soh.CustomerID,
-            MIN(soh.OrderDate) AS FirstOrderDate
-        FROM Sales.SalesOrderHeader soh
-        GROUP BY soh.CustomerID
+            CustomerID,
+            MIN(OrderDate) AS FirstOrderDate
+        FROM Sales.SalesOrderHeader
+        GROUP BY CustomerID
     ),
-    FirstOrderDetails
+
+    FirstPurchase
     AS
     (
         SELECT
             fo.CustomerID,
             fo.FirstOrderDate,
-            sod.SalesOrderDetailID,
-            sod.ProductID,
-            ROW_NUMBER() OVER (
-            PARTITION BY fo.CustomerID 
-            ORDER BY soh.OrderDate, sod.SalesOrderDetailID
-        ) AS rn
+            CONCAT(
+                YEAR(fo.FirstOrderDate), 
+                '-Q', 
+                DATEPART(QUARTER, fo.FirstOrderDate)
+            ) AS CohortQuarter,
+            CASE 
+                WHEN cr.Name IN ('United States', 'Canada') THEN 'North America'
+                WHEN cr.Name IN ('United Kingdom', 'Germany', 'France') THEN 'Western Europe'
+                ELSE 'Other'
+            END AS Region,
+            CASE 
+                WHEN c.StoreID IS NOT NULL THEN 'B2B' 
+                ELSE 'B2C' 
+            END AS CustomerType
         FROM FirstOrder fo
-            JOIN Sales.SalesOrderHeader soh
-            ON fo.CustomerID = soh.CustomerID
-                AND fo.FirstOrderDate = soh.OrderDate
-            JOIN Sales.SalesOrderDetail sod
-            ON soh.SalesOrderID = sod.SalesOrderID
-    ),
-    FirstPurchase
-    AS
-    (
-        SELECT
-            fod.CustomerID,
-            fod.FirstOrderDate,
-            FORMAT(fod.FirstOrderDate, 'yyyy-MM') AS CohortMonth,
-            pc.Name AS FirstCategory,
-            cr.Name AS CountryName,
-            CASE WHEN c.StoreID IS NOT NULL THEN 'B2B' ELSE 'B2C' END AS CustomerType
-        FROM FirstOrderDetails fod
-            JOIN Production.Product p
-            ON fod.ProductID = p.ProductID
-            JOIN Production.ProductSubcategory psc
-            ON p.ProductSubcategoryID = psc.ProductSubcategoryID
-            JOIN Production.ProductCategory pc
-            ON psc.ProductCategoryID = pc.ProductCategoryID
             LEFT JOIN Sales.Customer c
-            ON fod.CustomerID = c.CustomerID
+            ON fo.CustomerID = c.CustomerID
             LEFT JOIN Person.Person per
             ON c.PersonID = per.BusinessEntityID
             LEFT JOIN Person.BusinessEntityAddress bea
@@ -56,74 +42,68 @@ WITH
             ON a.StateProvinceID = sp.StateProvinceID
             LEFT JOIN Person.CountryRegion cr
             ON sp.CountryRegionCode = cr.CountryRegionCode
-        WHERE fod.rn = 1
     ),
+
+    CohortSizes
+    AS
+    (
+        SELECT
+            CohortQuarter,
+            Region,
+            CustomerType,
+            COUNT(DISTINCT CustomerID) AS CohortSize
+        FROM FirstPurchase
+        GROUP BY CohortQuarter, Region, CustomerType
+        HAVING COUNT(DISTINCT CustomerID) >= 50
+        -- mínimo tamaño
+    ),
+
     CohortOrders
     AS
     (
         SELECT
             soh.CustomerID,
             soh.OrderDate,
-            sod.LineTotal AS OrderAmount,
+            soh.TotalDue AS OrderAmount,
             fp.FirstOrderDate,
-            fp.CohortMonth,
-            fp.FirstCategory,
-            fp.CountryName,
+            fp.CohortQuarter,
+            fp.Region,
             fp.CustomerType,
-            DATEDIFF(MONTH, fp.FirstOrderDate, soh.OrderDate) AS MonthsAfterFirstOrder,
-            pc.Name AS OrderCategory
+            DATEDIFF(MONTH, fp.FirstOrderDate, soh.OrderDate) AS MonthsAfterFirstOrder
         FROM Sales.SalesOrderHeader soh
-            JOIN Sales.SalesOrderDetail sod
-            ON soh.SalesOrderID = sod.SalesOrderID
-            JOIN Production.Product prod
-            ON sod.ProductID = prod.ProductID
-            JOIN Production.ProductSubcategory psc
-            ON prod.ProductSubcategoryID = psc.ProductSubcategoryID
-            JOIN Production.ProductCategory pc
-            ON psc.ProductCategoryID = pc.ProductCategoryID
             INNER JOIN FirstPurchase fp
             ON soh.CustomerID = fp.CustomerID
-    ),
-    CohortSizes
-    AS
-    (
-        SELECT
-            CohortMonth,
-            FirstCategory,
-            CountryName,
-            CustomerType,
-            COUNT(DISTINCT CustomerID) AS CohortSize
-        FROM FirstPurchase
-        GROUP BY CohortMonth, FirstCategory, CountryName, CustomerType
+        WHERE EXISTS (
+            SELECT 1
+        FROM CohortSizes cs
+        WHERE fp.CohortQuarter = cs.CohortQuarter
+            AND fp.Region = cs.Region
+            AND fp.CustomerType = cs.CustomerType
+        )
     )
+
 SELECT
-    co.CohortMonth,
+    co.CohortQuarter,
     co.MonthsAfterFirstOrder,
-    co.FirstCategory,
-    co.CountryName,
+    co.Region,
     co.CustomerType,
     COUNT(DISTINCT co.CustomerID) AS ActiveCustomers,
     FORMAT(1.0 * COUNT(DISTINCT co.CustomerID) / MAX(cs.CohortSize), 'P2') AS RetentionRate,
     SUM(co.OrderAmount) AS TotalSpending,
-    COUNT(DISTINCT CASE WHEN co.OrderCategory <> co.FirstCategory THEN co.CustomerID END) AS CrossCategoryBuyers,
-    FORMAT(1.0 * COUNT(DISTINCT CASE WHEN co.OrderCategory <> co.FirstCategory THEN co.CustomerID END) 
-           / COUNT(DISTINCT co.CustomerID), 'P2') AS CrossCategoryRate,
-    AVG(co.OrderAmount) AS AvgOrderValue
+    AVG(co.OrderAmount) AS AvgOrderValue,
+    MAX(cs.CohortSize) AS CohortSize
 FROM CohortOrders co
     JOIN CohortSizes cs
-    ON co.CohortMonth = cs.CohortMonth
-        AND co.FirstCategory = cs.FirstCategory
-        AND co.CountryName = cs.CountryName
+    ON co.CohortQuarter = cs.CohortQuarter
+        AND co.Region = cs.Region
         AND co.CustomerType = cs.CustomerType
 WHERE co.MonthsAfterFirstOrder >= 0
 GROUP BY 
-    co.CohortMonth,
+    co.CohortQuarter,
     co.MonthsAfterFirstOrder,
-    co.FirstCategory,
-    co.CountryName,
+    co.Region,
     co.CustomerType
 ORDER BY 
-    co.CohortMonth,
+    co.CohortQuarter,
     co.MonthsAfterFirstOrder,
-    co.FirstCategory,
-    co.CountryName;
+    co.Region;

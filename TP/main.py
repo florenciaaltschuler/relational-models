@@ -403,7 +403,11 @@ def mapa_tiendas_envios():
 def cohortes():
     df = sql_conn.run_sql_file("cohortes.sql")
 
-    print(df.head())
+    print(df)
+
+    print()
+
+    print(df[["ActiveCustomers"]])
 
 
 if __name__ == "__main__":
