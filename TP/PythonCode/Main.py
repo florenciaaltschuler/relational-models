@@ -87,9 +87,9 @@ plt.rcParams.update({
 })
 
 # Ejecutar y ordenar los datos
-df7 = ejecutar_query('devoluciones_por_subcategoria.sql').sort_values('ReturnCount', ascending=False)
-df10 = ejecutar_query('tasa_devolucion_por_subcategoria.sql').query('ReturnRate > 0').sort_values('ReturnRate', ascending=False).head(50)
-df6 = ejecutar_query('devoluciones_por_territorio.sql').sort_values('ReturnCount', ascending=False)
+df7 = ejecutar_query('tasa_devolucion_por_subcategoria.sql').sort_values('ReturnCount', ascending=False)
+df10 = ejecutar_query('tasa_devolucion_por_subcategoria.sql').sort_values('ReturnRate', ascending=False)
+df6 = ejecutar_query('tasa_devolucion_por_territorio.sql').sort_values('ReturnCount', ascending=False)
 df12 = ejecutar_query('tasa_devolucion_por_territorio.sql').sort_values('ReturnRate', ascending=False)
 
 # Colores y estilos
