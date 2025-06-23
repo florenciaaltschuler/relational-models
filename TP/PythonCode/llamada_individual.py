@@ -23,24 +23,70 @@ def ejecutar_query(nombre_archivo_sql):
     with open(ruta, 'r', encoding='utf-8') as f:
         query = f.read()
     return pd.read_sql_query(query, conn)
+# Ejecutar el archivo SQL y cargar los datos
+df = ejecutar_query('productos_vendidos_por_estacion.sql')
 
 
-import matplotlib.pyplot as plt
-import matplotlib.pyplot as plt
-import seaborn as sns
+# Asegurar orden correcto de estaciones
+orden_estaciones = ['Primavera', 'Verano', 'Otoño', 'Invierno']
+df['Estacion'] = pd.Categorical(df['Estacion'], categories=orden_estaciones, ordered=True)
 
 
-# Estilo general
-sns.set(style="whitegrid")
 
-df4 = ejecutar_query('motivos_devoluciones.sql').sort_values('TotalReturns', ascending=False)
+# Ejecutar la consulta para obtener los datos pivotados
 
-# Crear figura independiente para lollipop
-plt.figure(figsize=(6, 4))
-plt.hlines(y=df4['Reason'], xmin=0, xmax=df4['TotalReturns'], color='gray', linewidth=2)
-plt.plot(df4['TotalReturns'], df4['Reason'], "o", color='black')
-plt.title('Motivos de Devolución')
-plt.xlabel('Cantidad de Devoluciones')
-plt.xlim(left=0)
-plt.tight_layout()
+# Configurar figura con subplots (2 filas, 2 columnas)
+fig, axs = plt.subplots(2, 2, figsize=(18, 12), sharex=True)
+fig.suptitle('Tendencias Estacionales por Territorio (Variaciones Porcentuales)', fontsize=20)
+
+# Variables y títulos
+variaciones = [
+    ('VariacionVentas', 'Variación Porcentual de Ventas'),
+    ('VariacionGananciaTotal', 'Variación Porcentual de Ganancia Total'),
+    ('VariacionGananciaBruta', 'Variación Porcentual de Ganancia Bruta'),
+    ('VariacionProductosVendidos', 'Variación Porcentual de Productos Vendidos')
+]
+
+# Letras para identificar subpaneles
+letras_paneles = ['A', 'B', 'C', 'D']
+
+# Paleta de colores por territorio
+territorios = df['Territorio'].unique()
+paleta_colores = sns.color_palette("tab10", n_colors=len(territorios))
+
+# Crear gráficos
+for idx, (ax, (var, titulo)) in enumerate(zip(axs.flat, variaciones)):
+    for i, (territorio, grupo) in enumerate(df.groupby('Territorio')):
+        sns.lineplot(data=grupo, x='Estacion', y=var,
+                     label=territorio if ax == axs[1, 1] else "",  # Solo etiquetas en último panel
+                     color=paleta_colores[i], marker='o', ci=None, ax=ax)
+
+    # Línea de promedio por estación
+    media_global = df.groupby('Estacion')[var].mean().reset_index()
+    sns.lineplot(data=media_global, x='Estacion', y=var,
+                 color='black', linewidth=2, linestyle='--',
+                 label='Promedio Global' if ax == axs[1, 1] else "", ax=ax)
+
+    # Títulos y formato
+    ax.set_title(titulo, fontsize=20)
+    ax.set_xlabel('', fontsize=14)
+    ax.set_ylabel('% Variación', fontsize=18)
+    ax.tick_params(axis='both', labelsize=16)
+
+    # Agregar letra del panel (arriba a la izquierda)
+    ax.text(-0.08, 1.05, letras_paneles[idx],
+            transform=ax.transAxes,
+            fontsize=22, fontweight='bold',
+            va='top', ha='left')
+
+    # Quitar leyenda local
+    if ax.get_legend() is not None:
+        ax.get_legend().remove()
+
+# Leyenda global
+handles, labels = axs[1, 1].get_legend_handles_labels()
+fig.legend(handles, labels, title='Territorio', fontsize=16, title_fontsize=18,
+           loc='lower center', bbox_to_anchor=(0.5, -0.03), ncol=4)
+
+plt.tight_layout(rect=[0, 0.05, 1, 0.95])
 plt.show()

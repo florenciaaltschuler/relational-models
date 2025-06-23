@@ -101,33 +101,42 @@ hatch_cantidad = ""
 # Crear figura
 fig, axs = plt.subplots(2, 2, figsize=(14, 12))
 
-# --- Subcategoría: Cantidad ---
+# --- Subcategoría: Cantidad (A) ---
 sns.barplot(x='ReturnCount', y='Subcategory', data=df7, ax=axs[0, 0], color=color_subcat, hatch=hatch_cantidad)
 axs[0, 0].set_title('Devoluciones por Subcategoría de Producto', fontsize=16)
 axs[0, 0].set_xlabel('Cantidad de Devoluciones', fontsize=14)
 axs[0, 0].set_ylabel('', fontsize=14)
+axs[0, 0].text(-0.1, 1.05, 'A', transform=axs[0, 0].transAxes,
+               fontsize=18, fontweight='bold', va='top', ha='left')
 
-# --- Subcategoría: Tasa ---
+# --- Subcategoría: Tasa (B) ---
 sns.barplot(x='ReturnRate', y='Subcategory', data=df10, ax=axs[0, 1], color=color_subcat, hatch=hatch_tasa)
 axs[0, 1].set_title('Tasa de Devolución por Subcategoría', fontsize=16)
 axs[0, 1].set_xlabel('Tasa de Devolución (Proporción)', fontsize=14)
 axs[0, 1].set_ylabel('', fontsize=14)
+axs[0, 1].text(-0.1, 1.05, 'B', transform=axs[0, 1].transAxes,
+               fontsize=18, fontweight='bold', va='top', ha='left')
 
-# --- Territorio: Cantidad ---
+# --- Territorio: Cantidad (C) ---
 sns.barplot(x='ReturnCount', y='Territory', data=df6, ax=axs[1, 0], color=color_territory, hatch=hatch_cantidad)
 axs[1, 0].set_title('Devoluciones por Territorio', fontsize=16)
 axs[1, 0].set_xlabel('Cantidad de Devoluciones', fontsize=14)
 axs[1, 0].set_ylabel('', fontsize=14)
+axs[1, 0].text(-0.1, 1.05, 'C', transform=axs[1, 0].transAxes,
+               fontsize=18, fontweight='bold', va='top', ha='left')
 
-# --- Territorio: Tasa ---
+# --- Territorio: Tasa (D) ---
 sns.barplot(x='ReturnRate', y='Territory', data=df12, ax=axs[1, 1], color=color_territory, hatch=hatch_tasa)
 axs[1, 1].set_title('Tasa de Devolución por Territorio', fontsize=16)
 axs[1, 1].set_xlabel('Tasa de Devolución (Proporción)', fontsize=14)
 axs[1, 1].set_ylabel('', fontsize=14)
+axs[1, 1].text(-0.1, 1.05, 'D', transform=axs[1, 1].transAxes,
+               fontsize=18, fontweight='bold', va='top', ha='left')
 
 # Ajuste final
 plt.tight_layout()
 plt.show()
+
 
 
 # 5. Devoluciones por producto - Barras horizontales
@@ -229,7 +238,34 @@ plt.tight_layout()
 plt.show()
 
 
+
 # Ejecutar la consulta para obtener los datos pivotados
+# Ejecutar el archivo SQL y cargar los datos
+df = ejecutar_query('productos_vendidos_por_estacion.sql')
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Asegurar orden correcto de estaciones
+orden_estaciones = ['Primavera', 'Verano', 'Otoño', 'Invierno']
+df['Estacion'] = pd.Categorical(df['Estacion'], categories=orden_estaciones, ordered=True)
+
+
+# 2. Ganancia por Mes y Año (Ejemplo: Agrupado por mes y año por territorio)
+df_mes_ano = ejecutar_query('ganancia_por_mes_año.sql')
+
+# Crear un FacetGrid para tener un gráfico por territorio
+g = sns.FacetGrid(df_mes_ano, col="Territorio", col_wrap=4, height=4)  # 4 gráficos por fila
+g.map(sns.lineplot, "Mes", "VentaTotal", marker="o", color="coral")
+
+# Personalizar los gráficos
+g.set_axis_labels("Mes", "Venta Total")
+g.set_titles("{col_name}")
+g.set_xticklabels(rotation=45)
+g.fig.suptitle('Ganancia por Mes y Año para cada Territorio', fontsize=16)
+plt.tight_layout()
+plt.subplots_adjust(top=0.9)  # Ajustar el título para no sobreponerse
+plt.show()
+
 df = ejecutar_query('ganancia_por_estacion_año.sql')
 
 # Verificar las primeras filas del DataFrame para asegurarse de que la columna 'CambioPorcentual' existe
@@ -263,82 +299,6 @@ plt.tight_layout()
 
 # Mostrar el gráfico
 plt.show()
-# 2. Ganancia por Mes y Año (Ejemplo: Agrupado por mes y año por territorio)
-df_mes_ano = ejecutar_query('ganancia_por_mes_año.sql')
-
-# Crear un FacetGrid para tener un gráfico por territorio
-g = sns.FacetGrid(df_mes_ano, col="Territorio", col_wrap=4, height=4)  # 4 gráficos por fila
-g.map(sns.lineplot, "Mes", "VentaTotal", marker="o", color="coral")
-
-# Personalizar los gráficos
-g.set_axis_labels("Mes", "Venta Total")
-g.set_titles("{col_name}")
-g.set_xticklabels(rotation=45)
-g.fig.suptitle('Ganancia por Mes y Año para cada Territorio', fontsize=16)
-plt.tight_layout()
-plt.subplots_adjust(top=0.9)  # Ajustar el título para no sobreponerse
-plt.show()
-
-
-
-
-# Ejecutar la consulta para obtener los datos pivotados
-# Ejecutar el archivo SQL y cargar los datos
-df = ejecutar_query('productos_vendidos_por_estacion.sql')
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-# Asegurar orden correcto de estaciones
-orden_estaciones = ['Primavera', 'Verano', 'Otoño', 'Invierno']
-df['Estacion'] = pd.Categorical(df['Estacion'], categories=orden_estaciones, ordered=True)
-
-# Configurar figura con subplots (2 filas, 2 columnas)
-fig, axs = plt.subplots(2, 2, figsize=(18, 12), sharex=True)
-fig.suptitle('Tendencias Estacionales por Territorio (Variaciones Porcentuales)', fontsize=20)
-
-# Variables y títulos
-variaciones = [
-    ('VariacionVentas', 'Variación Porcentual de Ventas'),
-    ('VariacionGananciaTotal', 'Variación Porcentual de Ganancia Total'),
-    ('VariacionGananciaBruta', 'Variación Porcentual de Ganancia Bruta'),
-    ('VariacionProductosVendidos', 'Variación Porcentual de Productos Vendidos')
-]
-
-# Paleta de colores por territorio
-territorios = df['Territorio'].unique()
-paleta_colores = sns.color_palette("tab10", n_colors=len(territorios))
-
-# Crear gráficos
-for ax, (var, titulo) in zip(axs.flat, variaciones):
-    for i, (territorio, grupo) in enumerate(df.groupby('Territorio')):
-        sns.lineplot(data=grupo, x='Estacion', y=var,
-                     label=territorio if ax == axs[1, 1] else "",  # Solo incluir etiquetas en el último para la leyenda
-                     color=paleta_colores[i], marker='o', ci=None, ax=ax)
-
-    # Línea de promedio por estación
-    media_global = df.groupby('Estacion')[var].mean().reset_index()
-    sns.lineplot(data=media_global, x='Estacion', y=var,
-                 color='black', linewidth=2, linestyle='--',
-                 label='Promedio Global' if ax == axs[1, 1] else "", ax=ax)
-
-    ax.set_title(titulo, fontsize=20)
-    ax.set_xlabel('', fontsize=14)
-    ax.set_ylabel('% Variación', fontsize=18)
-    ax.tick_params(axis='both', labelsize=16)
-    ax.tick_params(axis='x')
-    # ❌ Eliminar leyenda local del subplot (si existe)
-    if ax.get_legend() is not None:
-        ax.get_legend().remove()
-
-# Leyenda abajo (fuera de la grilla)
-handles, labels = axs[1, 1].get_legend_handles_labels()
-fig.legend(handles, labels, title='Territorio', fontsize=16, title_fontsize=18,
-           loc='lower center', bbox_to_anchor=(0.5, -0.03), ncol=4)
-
-plt.tight_layout(rect=[0, 0.05, 1, 0.95])
-plt.show()
-
-
 
 '''''
 # 14. Mapa: Ubicación de tiendas y destinos de envío conectados
