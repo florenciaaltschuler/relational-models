@@ -8,6 +8,7 @@ WITH
         FROM Sales.SalesOrderHeader
         GROUP BY CustomerID
     ),
+
     FirstPurchase
     AS
     (
@@ -27,6 +28,7 @@ WITH
             LEFT JOIN Sales.Customer c
             ON fo.CustomerID = c.CustomerID
     ),
+
     SalesReasons
     AS
     (
@@ -40,6 +42,7 @@ WITH
             JOIN Sales.SalesReason sr
             ON sohsr.SalesReasonID = sr.SalesReasonID
     ),
+
     CohortSizes
     AS
     (
@@ -51,6 +54,7 @@ WITH
         GROUP BY CohortQuarter, CustomerType
         HAVING COUNT(DISTINCT CustomerID) >= 50
     ),
+
     CohortOrders
     AS
     (
@@ -73,6 +77,7 @@ WITH
             AND fp.CustomerType = cs.CustomerType
     )
     ),
+
     ReasonStats
     AS
     (
@@ -90,6 +95,7 @@ WITH
         co.CustomerType,
         sr.SalesReason
     ),
+
     TopReasons
     AS
     (
@@ -105,6 +111,7 @@ WITH
         ) AS ReasonRank
         FROM ReasonStats
     )
+
 SELECT
     co.CohortQuarter,
     co.MonthsAfterFirstOrder,
@@ -123,7 +130,8 @@ FROM CohortOrders co
     JOIN CohortSizes cs
     ON co.CohortQuarter = cs.CohortQuarter
         AND co.CustomerType = cs.CustomerType
-    LEFT JOIN SalesReasons sr ON co.SalesOrderID = sr.SalesOrderID
+    LEFT JOIN SalesReasons sr
+    ON co.SalesOrderID = sr.SalesOrderID
     LEFT JOIN TopReasons tr
     ON co.CohortQuarter = tr.CohortQuarter
         AND co.MonthsAfterFirstOrder = tr.MonthsAfterFirstOrder
