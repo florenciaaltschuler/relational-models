@@ -1,2 +1,2 @@
 # relational-models
-This repository contains projects from the Master's course, using the AdventureWorks dataset. It covers SQL queries, data analysis, and visualization to explore and analyze business data.
+This repository contains SQL queries, data analysis, and visualization of business data from the *AdventureWorks2019* dataset.
